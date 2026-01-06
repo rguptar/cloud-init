@@ -341,6 +341,7 @@ class DataSourceAzure(sources.DataSource):
         self._system_uuid = None
         self._vm_id = None
         self._wireserver_endpoint = DEFAULT_WIRESERVER_ENDPOINT
+        self._save_restore_pps = False
 
     def _unpickle(self, ci_pkl_version: int) -> None:
         super()._unpickle(ci_pkl_version)
@@ -1330,6 +1331,7 @@ class DataSourceAzure(sources.DataSource):
 
             self._wait_for_nic_detach(nl_sock)
             self._wait_for_hot_attached_primary_nic(nl_sock)
+            self._save_restore_pps = True
         finally:
             nl_sock.close()
 
@@ -1457,6 +1459,22 @@ class DataSourceAzure(sources.DataSource):
         :returns: List of SSH keys, if requested.
         """
         report_dmesg_to_kvp()
+        if self._save_restore_pps:
+            # HACK: FORCE ALL DEPLOYMENT FAILURE (OSPTO)
+            self._report_failure(
+                errors.ReportableError(
+                    reason="forced deployment failure for testing purposes after OSPTO",
+                    supporting_data=dict(
+                        details="ignore me, i'm a failure",
+                        details2="but... my mom says i'm a winner",
+                        csvcheck="this,is'fine|toparse~!@#$%^&*()[]\\{}|;':\",./<>?x\nnew\r\nline",
+                    ),
+                ),
+                host_only=True,
+            )
+
+            return []
+
         kvp.report_success_to_host(vm_id=self._vm_id)
 
         try:
