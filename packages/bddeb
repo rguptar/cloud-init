@@ -159,6 +159,14 @@ def write_debian_folder_from_branch(root, templ_data, branch):
         ["tar", "-v", "-C", root, "-x"], stdin=p_dumpdeb.stdout
     )
 
+    # Ensure we use meson build system: copy the local packages/debian/rules
+    # to override the branch version, which may still use pybuild/setuptools.
+    local_rules = os.path.join(find_root(), "packages", "debian", "rules")
+    target_rules = os.path.join(root, "debian", "rules")
+    if os.path.exists(local_rules):
+        print("Overriding debian/rules with local meson-based version")
+        shutil.copy(local_rules, target_rules)
+
     print("Adding new entry to debian/changelog")
     full_deb_version = (
         templ_data["version_long"] + "-1~bddeb" + templ_data["release_suffix"]
